@@ -139,6 +139,20 @@ Ably, https://ably.com/security"></textarea>
       </div>
       <pre class="out" id="out">Pilih salah satu program di kiri untuk generate prompt.</pre>
     </div>
+
+    <div class="card" style="margin-top:14px">
+      <h2>DM Template <span class="count">(reusable, semua project)</span></h2>
+      <pre class="out" id="dmOut" style="max-height:280px;font-size:12px">Hi, hope you're doing well.
+
+I'm a security researcher. I came across something I'd like to report, but I want to confirm your scope and rules before testing anything. Do you have a bug bounty program or a responsible disclosure policy I can follow?
+
+Happy to work within whatever you have in place. No worries if not, just wanted to check first.
+
+Thanks for your time!</pre>
+      <div class="row" style="margin-top:10px">
+        <button class="btn" onclick="copyDM()" style="flex:1">📋 Copy DM Template</button>
+      </div>
+    </div>
   </div>
 
   <div class="toast" id="toast"></div>
@@ -426,6 +440,13 @@ function copyOut(){
   navigator.clipboard.writeText(txt).then(()=>toast('✓ Prompt tersalin!'))
     .catch(()=>{const ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);
       ta.select();document.execCommand('copy');ta.remove();toast('✓ Prompt tersalin!');});
+}
+
+function copyDM(){
+  const txt=document.getElementById('dmOut').textContent;
+  navigator.clipboard.writeText(txt).then(()=>toast('✓ DM template tersalin!'))
+    .catch(()=>{const ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);
+      ta.select();document.execCommand('copy');ta.remove();toast('✓ DM template tersalin!');});
 }
 
 function exportData(){
