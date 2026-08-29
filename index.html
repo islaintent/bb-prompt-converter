@@ -149,11 +149,11 @@ Ably, https://ably.com/security"></textarea>
       <h3>🔗 Sinkronisasi Lintas Device</h3>
       <p>Program lo disimpen ke <b>private Gist</b> GitHub — jadi terbuka di mana aja (HP, laptop, browser beda) tanpa export manual.</p>
       <div class="steps">
-        <b>Cara pasang (1x doang, ±1 menit):</b><br>
+        <b>Cara pasang (1x doang, ±30 detik):</b><br>
         1. Buka <a href="https://github.com/settings/tokens/new?scopes=gist&description=BB-Prompt-Converter" target="_blank">github.com/settings/tokens/new</a><br>
         2. Check centang <b>Gist</b> → <b>Generate token</b><br>
-        3. Paste token di bawah → Simpan<br>
-        <span style="color:var(--accent)">Token cuma scope <b>Gist</b> (bukan admin), &amp; tersimpan di browser lo doang.</span>
+        3. Paste token di bawah → <b>Connect</b><br>
+        <span style="color:var(--accent)">Gist udah disiapin otomatis (private). Token cuma scope <b>Gist</b>, tersimpan di browser lo doang.</span>
       </div>
       <label>Gist ID (auto setelah connect, isin kalau udah punya)</label>
       <input type="text" id="syncGist" placeholder="auto">
@@ -189,6 +189,8 @@ Jalankan sisanya sesuai memory dan skill. Berhenti sekali setelah pre-hunt recon
 Begitu temuan siap dikirim, jalankan pre-send ritual dan seluruh validation gate tanpa diminta, lalu kirim semua file report kepada gue. Jangan submit ke vendor.`;
 
 const SKEY='bb_sync_cfg_v1';
+// Gist default (private, fhryzal) — udah di-prep oleh Vexa
+const DEFAULT_GIST='cb69bb104b5f957de5ea9af9396b9035';
 let sync=JSON.parse(localStorage.getItem(SKEY)||'{}'); // {token, gist}
 let pushTimer=null;
 
@@ -203,7 +205,7 @@ function updateSyncUI(){
 
 function openSync(){
   document.getElementById('syncToken').value=sync.token||'';
-  document.getElementById('syncGist').value=sync.gist||'';
+  document.getElementById('syncGist').value=sync.gist||DEFAULT_GIST;
   document.getElementById('syncDisconnect').style.display=(sync.token&&sync.gist)?'':'none';
   document.getElementById('syncMsg').textContent='';
   document.getElementById('syncModal').classList.add('show');
