@@ -198,7 +198,9 @@ Load bb-rules-of-engagement, bb-autonomous-coverage, bug-bounty-validation-disci
 
 Prioritaskan temuan High/Critical yang valid dan berdampak nyata. Jika setelah coverage high-risk yang memadai tidak ditemukan High/Critical, lanjutkan ke Medium. Abaikan Low/Informational kecuali bisa dirangkai menjadi dampak lebih tinggi. Jangan menaikkan severity tanpa bukti.
 
-Jalankan sisanya sesuai memory dan skill. Berhenti sekali setelah pre-hunt recon untuk konfirmasi interpretasi scope. Setelah dikonfirmasi, putuskan langkah teknis sendiri kecuali tindakan keluar ke vendor, menyentuh data nyata, dana, atau mainnet.
+Jalankan sisanya sesuai memory dan skill. Berhenti sekali setelah pre-hunt recon untuk konfirmasi interpretasi scope. Setelah dikonfirmasi, putuskan langkah teknis sendiri untuk semua proof non-destruktif (read-only, akun uji, testnet, sandbox).
+
+Severity Critical/High hanya sah kalau impact-nya nyata dan terbukti. Kalau sebuah kandidat butuh proof yang menyentuh data nyata, dana, atau mainnet untuk membuktikan dampaknya, jangan menghindar dan jangan cap severity-nya sendiri — susun dulu rencana proof-of-impact seminimal mungkin (target persis, langkah, blast radius, apa yang disentuh, reversibilitas), berhenti, dan minta konfirmasi gue sebelum eksekusi. Setelah gue setujui, jalankan proof itu dengan ruang lingkup seminimal mungkin untuk menegakkan dampak, lalu stop. Jangan pernah broadcast tx mainnet, memindahkan dana, atau menyentuh data user pihak ketiga tanpa persetujuan eksplisit gue per-tindakan. Tindakan keluar ke vendor tetap dilarang tanpa perintah gue.
 
 Begitu temuan siap dikirim, jalankan pre-send ritual dan seluruh validation gate tanpa diminta, lalu kirim semua file report kepada gue. Jangan submit ke vendor.`;
 
