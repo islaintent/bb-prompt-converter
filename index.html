@@ -151,6 +151,15 @@
   .steps b{color:var(--text)}
   .steps a{color:var(--accent)}
 
+  .dup-banner{display:none;font-size:11.5px;color:#ffd479;background:rgba(255,180,60,.07);
+    border:1px solid rgba(255,180,60,.28);border-radius:var(--radius-sm);padding:9px 12px;
+    margin-bottom:11px;font-family:var(--mono);line-height:1.55}
+  .dup-banner a{color:var(--accent);font-weight:600;text-decoration:none;margin-left:4px;cursor:pointer}
+  .dup-banner a:hover{text-decoration:underline}
+  .prog.dup{border-color:rgba(255,180,60,.35)}
+  .dupflag{display:inline-block;font-family:var(--mono);font-size:9px;font-weight:700;color:#ffd479;
+    background:rgba(255,180,60,.12);border:1px solid rgba(255,180,60,.3);padding:0 4px;
+    border-radius:3px;vertical-align:middle;letter-spacing:.5px;margin-left:6px}
   ::-webkit-scrollbar{width:9px;height:9px}
   ::-webkit-scrollbar-track{background:transparent}
   ::-webkit-scrollbar-thumb{background:var(--border2);border-radius:5px;border:2px solid transparent;
@@ -204,6 +213,7 @@ Ably, https://ably.com/security"></textarea>
           <button class="btn sec" style="padding:5px 9px;font-size:11px" onclick="openSync()" id="syncBtn">⚙ Sinkron</button>
         </div>
         <input type="text" class="search" id="search" placeholder="🔍 cari program..." oninput="render()">
+        <div class="dup-banner" id="dupBanner"></div>
         <div class="list" id="list"></div>
         <div class="foot">
           <button class="btn sec" onclick="exportData()">⬇ Export</button>
@@ -432,18 +442,50 @@ function domainName(url){
   }catch(e){return url;}
 }
 function cap(s){return s.charAt(0).toUpperCase()+s.slice(1);}
-function normUrl(u){u=u.trim();if(u&&!/^https?:\/\//i.test(u))u='https://'+u;return u;}
+function normUrl(u){u=u.trim();if(u&&!/^https?:\/\/.*/i.test(u))u='https://'+u;return u;}
+
+// kunci normalisasi buat banding duplikat: host lowercase tanpa www + path tanpa trailing slash, abaikan protocol/query/hash
+function urlKey(u){
+  try{const x=new URL(normUrl(u));
+    let h=x.hostname.toLowerCase().replace(/^www\./,'');
+    let p=x.pathname.replace(/\/+$/,'').toLowerCase();
+    return h+p;
+  }catch(e){return (u||'').trim().toLowerCase().replace(/\/+$/,'');}
+}
+function findByKey(key){return programs.find(p=>urlKey(p.url)===key);}
+
+// kumpulkan grup duplikat yang udah terlanjur tersimpan
+function findDupes(){
+  const map={};
+  programs.forEach(p=>{const k=urlKey(p.url);(map[k]=map[k]||[]).push(p);});
+  return Object.values(map).filter(g=>g.length>1);
+}
+// buang duplikat: simpan entri PERTAMA per url (yang paling atas), hapus sisanya
+function dedupeAll(){
+  const groups=findDupes();
+  if(!groups.length)return;
+  const removed=groups.reduce((n,g)=>n+g.length-1,0);
+  const seen={};
+  programs=programs.filter(p=>{const k=urlKey(p.url);if(seen[k])return false;seen[k]=1;return true;});
+  save();render();toast('Dibersihkan: '+removed+' duplikat dihapus');
+}
 
 function previewName(){
   const url=normUrl(document.getElementById('pUrl').value);
   const el=document.getElementById('namePreview');
   if(!url){el.textContent='';return;}
+  const dup=findByKey(urlKey(url));
+  if(dup){el.innerHTML='<b style="color:#ffd479">⚠ Sudah ada:</b> '+esc(dup.name)+' — gak akan ditambah dobel.';return;}
   el.innerHTML='Nama terdeteksi: <b style="color:var(--accent)">'+esc(domainName(url))+'</b>';
 }
 
 function addSingle(){
   let url=normUrl(document.getElementById('pUrl').value);
   if(!url){toast('Link wajib diisi',true);return;}
+  const dup=findByKey(urlKey(url));
+  if(dup){toast('Sudah ada: '+dup.name,true);
+    document.getElementById('pUrl').value='';document.getElementById('namePreview').textContent='';
+    selectProg(dup.id);return;}
   const finalName=domainName(url);
   programs.unshift({id:Date.now()+Math.random(),name:finalName,url});
   save();document.getElementById('pUrl').value='';document.getElementById('namePreview').textContent='';
@@ -468,10 +510,15 @@ function parseLine(line){
 
 function addBulk(){
   const lines=document.getElementById('bulkText').value.split('\n');
-  let added=0;
-  lines.forEach(l=>{const p=parseLine(l);if(p){programs.unshift(p);added++;}});
-  if(!added){toast('Gak ada baris valid',true);return;}
-  save();document.getElementById('bulkText').value='';render();toast(added+' program di-import');
+  const seen={};programs.forEach(p=>seen[urlKey(p.url)]=1);
+  let added=0,skipped=0;
+  lines.forEach(l=>{const p=parseLine(l);if(!p)return;
+    const k=urlKey(p.url);
+    if(seen[k]){skipped++;return;} // dobel vs existing atau sesama baris
+    seen[k]=1;programs.unshift(p);added++;});
+  if(!added&&!skipped){toast('Gak ada baris valid',true);return;}
+  save();document.getElementById('bulkText').value='';render();
+  toast(added+' di-import'+(skipped?', '+skipped+' dobel di-skip':''));
 }
 
 function selectProg(id){
@@ -504,18 +551,32 @@ function editProg(id,ev){
 function render(){
   const q=document.getElementById('search').value.toLowerCase();
   const list=document.getElementById('list');
-  const filtered=programs.filter(p=>p.name.toLowerCase().includes(q)||p.url.toLowerCase().includes(q));
   document.getElementById('cnt').textContent='('+programs.length+')';
+
+  // auto-detek duplikat yang udah tersimpan
+  const groups=findDupes();
+  const dupKeys={};groups.forEach(g=>{const k=urlKey(g[0].url);dupKeys[k]=g.length;});
+  const banner=document.getElementById('dupBanner');
+  if(groups.length){
+    const dupCount=groups.reduce((n,g)=>n+g.length-1,0);
+    banner.style.display='block';
+    banner.innerHTML='⚠ Terdeteksi '+dupCount+' entri dobel di '+groups.length+' program. '
+      +'<a onclick="dedupeAll()">Bersihkan sekarang →</a>';
+  }else{banner.style.display='none';banner.innerHTML='';}
+
+  const filtered=programs.filter(p=>p.name.toLowerCase().includes(q)||p.url.toLowerCase().includes(q));
   if(!filtered.length){list.innerHTML='<div class="empty">'+(programs.length?'Gak ketemu.':'Belum ada program. Tambah di atas.')+'</div>';return;}
-  list.innerHTML=filtered.map(p=>`
-    <div class="prog ${selected&&selected.id===p.id?'active':''}" onclick="selectProg(${p.id})">
+  list.innerHTML=filtered.map(p=>{
+    const isDup=dupKeys[urlKey(p.url)];
+    return `
+    <div class="prog ${selected&&selected.id===p.id?'active':''} ${isDup?'dup':''}" onclick="selectProg(${p.id})">
       <div class="info">
-        <div class="name">${esc(p.name)}</div>
+        <div class="name">${esc(p.name)}${isDup?'<span class="dupflag">DOBEL</span>':''}</div>
         <div class="url">${esc(p.url)}</div>
       </div>
       <button class="btn danger" title="Ubah nama" onclick="editProg(${p.id},event)">✎</button>
       <button class="btn danger" title="Hapus" onclick="delProg(${p.id},event)">✕</button>
-    </div>`).join('');
+    </div>`;}).join('');
 }
 function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
 
@@ -545,9 +606,12 @@ function importData(e){
   const r=new FileReader();
   r.onload=()=>{try{const arr=JSON.parse(r.result);
     if(!Array.isArray(arr))throw 0;
-    let added=0;arr.forEach(p=>{if(p.url){programs.unshift({id:Date.now()+Math.random(),
-      name:p.name||domainName(p.url),url:normUrl(p.url)});added++;}});
-    save();render();toast(added+' program di-import');}
+    const seen={};programs.forEach(p=>seen[urlKey(p.url)]=1);
+    let added=0,skipped=0;
+    arr.forEach(p=>{if(!p||!p.url)return;const u=normUrl(p.url);const k=urlKey(u);
+      if(seen[k]){skipped++;return;}
+      seen[k]=1;programs.unshift({id:Date.now()+Math.random(),name:p.name||domainName(u),url:u});added++;});
+    save();render();toast(added+' di-import'+(skipped?', '+skipped+' dobel di-skip':''));}
     catch(x){toast('File JSON gak valid',true);}};
   r.readAsText(f);e.target.value='';
 }
