@@ -183,6 +183,28 @@
   .dupflag{display:inline-block;font-family:var(--mono);font-size:9px;font-weight:700;color:#ffd479;
     background:rgba(255,180,60,.12);border:1px solid rgba(255,180,60,.3);padding:0 4px;
     border-radius:3px;vertical-align:middle;letter-spacing:.5px;margin-left:6px}
+
+  /* type selector (web2/web3) */
+  .typesel{display:flex;gap:6px;margin-top:5px}
+  .topt{flex:1;text-align:center;padding:8px;font-size:12px;border-radius:var(--radius-sm);cursor:pointer;
+    background:var(--bg);color:var(--muted);font-weight:600;font-family:var(--mono);letter-spacing:.3px;
+    border:1px solid var(--border2);transition:.14s}
+  .topt:hover{color:var(--text);border-color:var(--muted)}
+  .topt.active[data-type="web2"]{background:rgba(99,179,255,.12);color:var(--blue);border-color:#2f6ea5}
+  .topt.active[data-type="web3"]{background:var(--accent-glow);color:var(--accent);border-color:var(--accent-dim)}
+  /* filter tabs */
+  .ftabs{display:flex;gap:4px;margin-bottom:10px;background:var(--bg);padding:4px;
+    border-radius:var(--radius-sm);border:1px solid var(--border)}
+  .ftab{flex:1;text-align:center;padding:6px;font-size:11px;border-radius:5px;cursor:pointer;
+    background:transparent;color:var(--muted);font-weight:600;font-family:var(--mono);letter-spacing:.3px;transition:.15s}
+  .ftab:hover{color:var(--text)}
+  .ftab.active{background:var(--panel2);color:var(--text);box-shadow:0 1px 0 rgba(255,255,255,.04) inset}
+  .ftab .fc{opacity:.55;font-size:10px;margin-left:3px}
+  /* type badge on list item */
+  .typeflag{display:inline-block;font-family:var(--mono);font-size:9px;font-weight:700;padding:0 4px;
+    border-radius:3px;vertical-align:middle;letter-spacing:.5px;margin-left:6px}
+  .typeflag.web2{color:var(--blue);background:rgba(99,179,255,.12);border:1px solid rgba(99,179,255,.3)}
+  .typeflag.web3{color:var(--accent);background:var(--accent-glow);border:1px solid var(--accent-dim)}
   ::-webkit-scrollbar{width:9px;height:9px}
   ::-webkit-scrollbar-track{background:transparent}
   ::-webkit-scrollbar-thumb{background:var(--border2);border-radius:5px;border:2px solid transparent;
@@ -211,6 +233,12 @@
           <label>Link Program</label>
           <input type="text" id="pUrl" placeholder="https://security.avala.ai/bounty" oninput="previewName()">
           <div class="hint" id="namePreview"></div>
+          <label style="margin-top:11px">Tipe Program</label>
+          <div class="typesel" id="typeSel">
+            <div class="topt active" data-type="auto" onclick="setAddType('auto')">Auto</div>
+            <div class="topt" data-type="web2" onclick="setAddType('web2')">Web2</div>
+            <div class="topt" data-type="web3" onclick="setAddType('web3')">Web3</div>
+          </div>
           <div class="row" style="margin-top:12px">
             <button class="btn" onclick="addSingle()">+ Tambah</button>
           </div>
@@ -236,6 +264,11 @@ Ably, https://ably.com/security"></textarea>
           <button class="btn sec" style="padding:5px 9px;font-size:11px" onclick="openSync()" id="syncBtn">⚙ Sinkron</button>
         </div>
         <input type="text" class="search" id="search" placeholder="🔍 cari program..." oninput="render()">
+        <div class="ftabs" id="ftabs">
+          <div class="ftab active" data-filter="all" onclick="setFilter('all')">Semua<span class="fc" id="fcAll"></span></div>
+          <div class="ftab" data-filter="web2" onclick="setFilter('web2')">Web2<span class="fc" id="fcWeb2"></span></div>
+          <div class="ftab" data-filter="web3" onclick="setFilter('web3')">Web3<span class="fc" id="fcWeb3"></span></div>
+        </div>
         <div class="dup-banner" id="dupBanner"></div>
         <div class="list" id="list"></div>
         <div class="foot">
@@ -302,6 +335,33 @@ Thanks for your time!</pre>
 const KEY='bb_prompt_programs_v1';
 let programs=JSON.parse(localStorage.getItem(KEY)||'[]');
 let selected=null;
+let addType='auto';   // tipe yang dipilih di form "Add Satuan"
+let filter='all';     // filter list aktif: all | web2 | web3
+
+// ─── Klasifikasi Web2 vs Web3 ───────────────────────────────
+// platform audit yang murni web3/smart-contract
+const WEB3_PLATFORMS={'immunefi.com':1,'cantina.xyz':1,'code4rena.com':1,'code423n4.com':1,'sherlock.xyz':1,'hats.finance':1,'cadenlabs.com':1};
+// sinyal kata kunci web3 (host, path, atau nama)
+const WEB3_KW=/(web3|defi|blockchain|smart[-_ ]?contract|onchain|on-chain|ethereum|\beth\b|solana|\bsol\b|\bevm\b|\bdao\b|\bnft\b|\bdefi\b|protocol|staking|validator|rollup|zk[-_ ]?|bridge|liquidity|\bamm\b|\bdex\b|tokenomics|\berc20\b|\berc-20\b|\berc721\b|wallet|crypto|\bchain\b|mainnet|testnet|\bl2\b|layer[-_ ]?2|\bgmx\b|\baave\b|uniswap|\bpump\.fun)/i;
+function classifyType(url,name){
+  let host='';try{host=new URL(normUrl(url)).hostname.toLowerCase().replace(/^www\./,'');}catch(e){}
+  if(WEB3_PLATFORMS[host])return 'web3';
+  const hay=((url||'')+' '+(name||'')).toLowerCase();
+  return WEB3_KW.test(hay)?'web3':'web2';
+}
+// pastikan tiap program punya field type (untuk data lama)
+function ensureType(p){if(p&&!p.type){p.type=classifyType(p.url,p.name);}return p;}
+programs.forEach(ensureType);
+
+function setAddType(t){
+  addType=t;
+  document.querySelectorAll('#typeSel .topt').forEach(x=>x.classList.toggle('active',x.dataset.type===t));
+}
+function setFilter(f){
+  filter=f;
+  document.querySelectorAll('#ftabs .ftab').forEach(x=>x.classList.toggle('active',x.dataset.filter===f));
+  render();
+}
 
 const TEMPLATE=(name,url)=>`Mulai assessment bug bounty terotorisasi di target ini.
 
@@ -396,7 +456,7 @@ function syncDisconnect(){
 function mergePrograms(local,remote){
   const seen={},out=[];
   [...remote,...local].forEach(p=>{if(p&&p.url&&!seen[p.url]){seen[p.url]=1;
-    out.push({id:p.id||Date.now()+Math.random(),name:p.name||domainName(p.url),url:p.url});}});
+    out.push({id:p.id||Date.now()+Math.random(),name:p.name||domainName(p.url),url:p.url,type:p.type||classifyType(p.url,p.name)});}});
   return out;
 }
 
@@ -512,9 +572,11 @@ function addSingle(){
     document.getElementById('pUrl').value='';document.getElementById('namePreview').textContent='';
     selectProg(dup.id);return;}
   const finalName=domainName(url);
-  programs.unshift({id:Date.now()+Math.random(),name:finalName,url});
+  const ftype=(addType==='auto')?classifyType(url,finalName):addType;
+  programs.unshift({id:Date.now()+Math.random(),name:finalName,url,type:ftype});
   save();document.getElementById('pUrl').value='';document.getElementById('namePreview').textContent='';
-  render();toast('Ditambah: '+finalName);
+  setAddType('auto');
+  render();toast('Ditambah: '+finalName+' ['+ftype+']');
 }
 
 function parseLine(line){
@@ -530,7 +592,7 @@ function parseLine(line){
   url=normUrl((url||'').trim());
   if(!url)return null;
   name=(name||'').trim()||domainName(url);
-  return {id:Date.now()+Math.random(),name,url};
+  return {id:Date.now()+Math.random(),name,url,type:classifyType(url,name)};
 }
 
 function addBulk(){
@@ -573,10 +635,26 @@ function editProg(id,ev){
     if(selected&&selected.id===id)selectProg(id);}
 }
 
+// toggle manual web2 <-> web3 (kalau auto-classify salah)
+function toggleType(id,ev){
+  ev.stopPropagation();
+  const p=programs.find(x=>x.id===id);if(!p)return;
+  p.type=(p.type==='web3')?'web2':'web3';
+  save();render();
+  toast(esc(p.name)+' → '+p.type.toUpperCase());
+}
+
 function render(){
   const q=document.getElementById('search').value.toLowerCase();
   const list=document.getElementById('list');
   document.getElementById('cnt').textContent='('+programs.length+')';
+
+  // hitung per-tipe untuk badge di filter tabs
+  const nWeb2=programs.filter(p=>p.type==='web2').length;
+  const nWeb3=programs.filter(p=>p.type==='web3').length;
+  document.getElementById('fcAll').textContent=programs.length?('· '+programs.length):'';
+  document.getElementById('fcWeb2').textContent=nWeb2?('· '+nWeb2):'';
+  document.getElementById('fcWeb3').textContent=nWeb3?('· '+nWeb3):'';
 
   // auto-detek duplikat yang udah tersimpan
   const groups=findDupes();
@@ -589,16 +667,24 @@ function render(){
       +'<a onclick="dedupeAll()">Bersihkan sekarang →</a>';
   }else{banner.style.display='none';banner.innerHTML='';}
 
-  const filtered=programs.filter(p=>p.name.toLowerCase().includes(q)||p.url.toLowerCase().includes(q));
-  if(!filtered.length){list.innerHTML='<div class="empty">'+(programs.length?'Gak ketemu.':'Belum ada program. Tambah di atas.')+'</div>';return;}
+  const filtered=programs.filter(p=>
+    (filter==='all'||p.type===filter)
+    &&(p.name.toLowerCase().includes(q)||p.url.toLowerCase().includes(q)));
+  if(!filtered.length){
+    const emptyMsg=programs.length
+      ?(filter!=='all'?('Belum ada program '+filter.toUpperCase()+'.'):'Gak ketemu.')
+      :'Belum ada program. Tambah di atas.';
+    list.innerHTML='<div class="empty">'+emptyMsg+'</div>';return;}
   list.innerHTML=filtered.map(p=>{
     const isDup=dupKeys[urlKey(p.url)];
+    const tf='<span class="typeflag '+p.type+'">'+p.type.toUpperCase()+'</span>';
     return `
     <div class="prog ${selected&&selected.id===p.id?'active':''} ${isDup?'dup':''}" onclick="selectProg(${p.id})">
       <div class="info">
-        <div class="name">${esc(p.name)}${isDup?'<span class="dupflag">DOBEL</span>':''}</div>
+        <div class="name">${esc(p.name)}${tf}${isDup?'<span class="dupflag">DOBEL</span>':''}</div>
         <div class="url">${esc(p.url)}</div>
       </div>
+      <button class="btn danger" title="Web2/Web3" onclick="toggleType(${p.id},event)">⇄</button>
       <button class="btn danger" title="Ubah nama" onclick="editProg(${p.id},event)">✎</button>
       <button class="btn danger" title="Hapus" onclick="delProg(${p.id},event)">✕</button>
     </div>`;}).join('');
@@ -635,7 +721,7 @@ function importData(e){
     let added=0,skipped=0;
     arr.forEach(p=>{if(!p||!p.url)return;const u=normUrl(p.url);const k=urlKey(u);
       if(seen[k]){skipped++;return;}
-      seen[k]=1;programs.unshift({id:Date.now()+Math.random(),name:p.name||domainName(u),url:u});added++;});
+      seen[k]=1;programs.unshift({id:Date.now()+Math.random(),name:p.name||domainName(u),url:u,type:p.type||classifyType(u,p.name)});added++;});
     save();render();toast(added+' di-import'+(skipped?', '+skipped+' dobel di-skip':''));}
     catch(x){toast('File JSON gak valid',true);}};
   r.readAsText(f);e.target.value='';
@@ -651,6 +737,8 @@ function clearAll(){
 
 render();
 updateSyncUI();
+// persist migrasi tipe untuk data lama (sekali saja, tanpa trigger sync-push)
+localStorage.setItem(KEY,JSON.stringify(programs));
 pullOnLoad();
 </script>
 </body>
