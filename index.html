@@ -192,14 +192,6 @@
   .topt:hover{color:var(--text);border-color:var(--muted)}
   .topt.active[data-type="web2"]{background:rgba(99,179,255,.12);color:var(--blue);border-color:#2f6ea5}
   .topt.active[data-type="web3"]{background:var(--accent-glow);color:var(--accent);border-color:var(--accent-dim)}
-  /* filter tabs */
-  .ftabs{display:flex;gap:4px;margin-bottom:10px;background:var(--bg);padding:4px;
-    border-radius:var(--radius-sm);border:1px solid var(--border)}
-  .ftab{flex:1;text-align:center;padding:6px;font-size:11px;border-radius:5px;cursor:pointer;
-    background:transparent;color:var(--muted);font-weight:600;font-family:var(--mono);letter-spacing:.3px;transition:.15s}
-  .ftab:hover{color:var(--text)}
-  .ftab.active{background:var(--panel2);color:var(--text);box-shadow:0 1px 0 rgba(255,255,255,.04) inset}
-  .ftab .fc{opacity:.55;font-size:10px;margin-left:3px}
   /* section header (web2/web3 split) */
   .sec-head{display:flex;align-items:center;gap:8px;font-size:11px;font-family:var(--mono);
     text-transform:uppercase;letter-spacing:1.2px;font-weight:600;color:var(--muted);
@@ -344,15 +336,27 @@ let selected=null;
 let addType='auto';   // tipe yang dipilih di form "Add Satuan"
 
 // ─── Klasifikasi Web2 vs Web3 ───────────────────────────────
-// platform audit yang murni web3/smart-contract
+// platform audit yang murni web3/smart-contract → langsung web3
 const WEB3_PLATFORMS={'immunefi.com':1,'cantina.xyz':1,'code4rena.com':1,'code423n4.com':1,'sherlock.xyz':1,'hats.finance':1,'cadenlabs.com':1};
-// sinyal kata kunci web3 (host, path, atau nama)
-const WEB3_KW=/(web3|defi|blockchain|smart[-_ ]?contract|onchain|on-chain|ethereum|\beth\b|solana|\bsol\b|\bevm\b|\bdao\b|\bnft\b|\bdefi\b|protocol|staking|validator|rollup|zk[-_ ]?|bridge|liquidity|\bamm\b|\bdex\b|tokenomics|\berc20\b|\berc-20\b|\berc721\b|wallet|crypto|\bchain\b|mainnet|testnet|\bl2\b|layer[-_ ]?2|\bgmx\b|\baave\b|uniswap|\bpump\.fun)/i;
+// TLD yang khas crypto/web3
+const WEB3_TLD=/\.(finance|exchange|xyz|money|network|capital|markets|fund|cash|crypto|defi)$/i;
+// substring sinyal web3 (TANPA word-boundary — biar "risechain","chainport" ketangkep).
+// dicek ke gabungan host+path+nama.
+const WEB3_SUB=['web3','defi','blockchain','crypto','bitcoin','ethereum','solana','polygon',
+  'arbitrum','optimism','avalanche','binance','\bbnb\b','\bbsc\b','onchain','on-chain',
+  'smartcontract','smart-contract','smart contract','tokenomic','staking','stake','restak',
+  'validator','rollup','mainnet','testnet','liquidity','tokeniz','erc20','erc-20','erc721',
+  'erc-721','airdrop','uniswap','aave','frax','\bgmx\b','pendle','curve','yield','vault',
+  'lending','perpetual','\bperp\b','\bdex\b','\bamm\b','\bdao\b','\bnft\b','\bzk\b',
+  'wallet','ledger','custody','stablecoin','\busdt\b','\busdc\b','\bdai\b','chain','token','coin'];
+const WEB3_RE=new RegExp('('+WEB3_SUB.join('|')+')','i');
+// override manual (kalau auto salah, kesimpan permanen di field type)
 function classifyType(url,name){
   let host='';try{host=new URL(normUrl(url)).hostname.toLowerCase().replace(/^www\./,'');}catch(e){}
   if(WEB3_PLATFORMS[host])return 'web3';
-  const hay=((url||'')+' '+(name||'')).toLowerCase();
-  return WEB3_KW.test(hay)?'web3':'web2';
+  if(WEB3_TLD.test(host))return 'web3';
+  const hay=(host+' '+(url||'')+' '+(name||'')).toLowerCase();
+  return WEB3_RE.test(hay)?'web3':'web2';
 }
 // pastikan tiap program punya field type (untuk data lama)
 function ensureType(p){if(p&&!p.type){p.type=classifyType(p.url,p.name);}return p;}
