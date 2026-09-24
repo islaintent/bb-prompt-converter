@@ -192,14 +192,17 @@
   .topt:hover{color:var(--text);border-color:var(--muted)}
   .topt.active[data-type="web2"]{background:rgba(99,179,255,.12);color:var(--blue);border-color:#2f6ea5}
   .topt.active[data-type="web3"]{background:var(--accent-glow);color:var(--accent);border-color:var(--accent-dim)}
-  /* section header (web2/web3 split) */
-  .sec-head{display:flex;align-items:center;gap:8px;font-size:11px;font-family:var(--mono);
-    text-transform:uppercase;letter-spacing:1.2px;font-weight:600;color:var(--muted);
-    margin:2px 0 7px;padding-bottom:6px;border-bottom:1px solid var(--border)}
-  .sec-dot{width:6px;height:6px;border-radius:2px;flex:0 0 auto}
-  .sec-dot.web2{background:var(--blue);box-shadow:0 0 8px rgba(99,179,255,.6)}
-  .sec-dot.web3{background:var(--accent);box-shadow:0 0 8px var(--accent)}
-  .list-web2,.list-web3{max-height:300px}
+  /* filter tabs (web2/web3 toggle) */
+  .ftabs{display:flex;gap:4px;margin-bottom:11px;background:var(--bg);padding:4px;
+    border-radius:var(--radius-sm);border:1px solid var(--border)}
+  .ftab{flex:1;text-align:center;padding:7px 6px;font-size:11.5px;border-radius:5px;cursor:pointer;
+    background:transparent;color:var(--muted);font-weight:600;font-family:var(--mono);
+    letter-spacing:.3px;transition:.15s;user-select:none}
+  .ftab:hover{color:var(--text)}
+  .ftab.active[data-filter="all"]{background:var(--panel2);color:var(--text);box-shadow:0 1px 0 rgba(255,255,255,.04) inset}
+  .ftab.active[data-filter="web2"]{background:rgba(99,179,255,.12);color:var(--blue);box-shadow:0 1px 0 rgba(255,255,255,.04) inset}
+  .ftab.active[data-filter="web3"]{background:var(--accent-glow);color:var(--accent);box-shadow:0 1px 0 rgba(255,255,255,.04) inset}
+  .ftab .fc{opacity:.6;font-size:10px;margin-left:2px}
   /* type badge on list item */
   .typeflag{display:inline-block;font-family:var(--mono);font-size:9px;font-weight:700;padding:0 4px;
     border-radius:3px;vertical-align:middle;letter-spacing:.5px;margin-left:6px}
@@ -264,11 +267,13 @@ Ably, https://ably.com/security"></textarea>
           <button class="btn sec" style="padding:5px 9px;font-size:11px" onclick="openSync()" id="syncBtn">⚙ Sinkron</button>
         </div>
         <input type="text" class="search" id="search" placeholder="🔍 cari program..." oninput="render()">
+        <div class="ftabs" id="ftabs">
+          <div class="ftab active" data-filter="all" onclick="setFilter('all')">Semua <span class="fc" id="fcAll"></span></div>
+          <div class="ftab" data-filter="web2" onclick="setFilter('web2')">Web2 <span class="fc" id="fcWeb2"></span></div>
+          <div class="ftab" data-filter="web3" onclick="setFilter('web3')">Web3 <span class="fc" id="fcWeb3"></span></div>
+        </div>
         <div class="dup-banner" id="dupBanner"></div>
-        <div class="sec-head"><span class="sec-dot web2"></span>Web2 <span class="count" id="cntWeb2"></span></div>
-        <div class="list list-web2" id="listWeb2"></div>
-        <div class="sec-head" style="margin-top:14px"><span class="sec-dot web3"></span>Web3 <span class="count" id="cntWeb3"></span></div>
-        <div class="list list-web3" id="listWeb3"></div>
+        <div class="list" id="list"></div>
         <div class="foot">
           <button class="btn sec" onclick="exportData()">⬇ Export</button>
           <button class="btn sec" onclick="document.getElementById('imp').click()">⬆ Import</button>
@@ -334,26 +339,42 @@ const KEY='bb_prompt_programs_v1';
 let programs=JSON.parse(localStorage.getItem(KEY)||'[]');
 let selected=null;
 let addType='auto';   // tipe yang dipilih di form "Add Satuan"
+let filter='all';     // filter list aktif: all | web2 | web3
 
 // ─── Klasifikasi Web2 vs Web3 ───────────────────────────────
-// platform audit yang murni web3/smart-contract → langsung web3
+// ─── Klasifikasi Web2 vs Web3 (strict) ──────────────────────
+// 1) platform audit murni web3/smart-contract → langsung web3
 const WEB3_PLATFORMS={'immunefi.com':1,'cantina.xyz':1,'code4rena.com':1,'code423n4.com':1,'sherlock.xyz':1,'hats.finance':1,'cadenlabs.com':1};
-// TLD yang khas crypto/web3
-const WEB3_TLD=/\.(finance|exchange|xyz|money|network|capital|markets|fund|cash|crypto|defi)$/i;
-// substring sinyal web3 (TANPA word-boundary — biar "risechain","chainport" ketangkep).
-// dicek ke gabungan host+path+nama.
-const WEB3_SUB=['web3','defi','blockchain','crypto','bitcoin','ethereum','solana','polygon',
-  'arbitrum','optimism','avalanche','binance','\bbnb\b','\bbsc\b','onchain','on-chain',
-  'smartcontract','smart-contract','smart contract','tokenomic','staking','stake','restak',
-  'validator','rollup','mainnet','testnet','liquidity','tokeniz','erc20','erc-20','erc721',
-  'erc-721','airdrop','uniswap','aave','frax','\bgmx\b','pendle','curve','yield','vault',
-  'lending','perpetual','\bperp\b','\bdex\b','\bamm\b','\bdao\b','\bnft\b','\bzk\b',
-  'wallet','ledger','custody','stablecoin','\busdt\b','\busdc\b','\bdai\b','chain','token','coin'];
+// 2) TLD yang praktis selalu crypto/web3
+const WEB3_TLD=/\.(finance|exchange|money|defi|crypto)$/i;
+// 3) allowlist domain crypto yang NGGAK ketangkep keyword (nama netral)
+const WEB3_DOMAINS=new Set(['kinetiq.xyz','diadata.org','nomina.io','litprotocol.com','neo.org',
+  'xrex.io','kiln.fi','sideshift.ai','routescan.io','ethos.network','mor.org','obol.org',
+  'parity.io','szns.io','bitdelta.com','trmlabs.com','self.app','amdax.com','finrock.io',
+  'blockonomics.co','risechain.com','current.finance','xprnetwork.org','sensay.io']);
+// 4) blocklist: web2 yang kebetulan match keyword/TLD (false-positive guard)
+const WEB2_DOMAINS=new Set(['hosting.xyz','bolt.earth','n26.com','julo.co.id','paytm.com',
+  'setu.co','kycaid.com','aeza.net','onidel.com','mate.security','global.com','re-cap.com',
+  'identityhub.app','flash-payments.com','bloomcredit.io','moneykit.com']);
+// 5) substring sinyal web3 (tanpa word-boundary → "risechain","chainport","stakedao" ketangkep)
+const WEB3_SUB=['web3','defi','blockchain','\\bcrypto','bitcoin','ethereum','\\beth\\b','solana',
+  '\\bsol\\b','polkadot','polygon','arbitrum','optimism','avalanche','\\bbnb\\b','\\bbsc\\b',
+  'onchain','on-chain','smartcontract','smart-contract','smart contract','tokenomic','tokeniz',
+  'staking','stakedao','\\bstake\\b','restak','validator','rollup','mainnet','testnet',
+  'liquidity','erc20','erc-20','erc721','erc-721','airdrop','uniswap','\\baave\\b','frax',
+  'pendle','\\bgmx\\b','\\bcurve\\b','\\byield\\b','\\bvault\\b','lending','perpetual','\\bperp\\b',
+  '\\bdex\\b','\\bamm\\b','\\bdao\\b','\\bnft\\b','\\bzk\\b','custody','stablecoin','\\busdt\\b',
+  '\\busdc\\b','\\bchain\\b','chainport','risechain','qorechain','\\bcoin\\b','coinkite','spectrocoin',
+  'totalcoin','coinfinity','cryptocities','\\bledger\\b','\\bshift'];
 const WEB3_RE=new RegExp('('+WEB3_SUB.join('|')+')','i');
-// override manual (kalau auto salah, kesimpan permanen di field type)
+function regDomain(host){const parts=host.split('.');return parts.length>2?parts.slice(-2).join('.'):host;}
 function classifyType(url,name){
   let host='';try{host=new URL(normUrl(url)).hostname.toLowerCase().replace(/^www\./,'');}catch(e){}
-  if(WEB3_PLATFORMS[host])return 'web3';
+  const reg=regDomain(host);
+  // guard dulu: web2 eksplisit menang
+  if(WEB2_DOMAINS.has(host)||WEB2_DOMAINS.has(reg))return 'web2';
+  if(WEB3_PLATFORMS[host]||WEB3_PLATFORMS[reg])return 'web3';
+  if(WEB3_DOMAINS.has(host)||WEB3_DOMAINS.has(reg))return 'web3';
   if(WEB3_TLD.test(host))return 'web3';
   const hay=(host+' '+(url||'')+' '+(name||'')).toLowerCase();
   return WEB3_RE.test(hay)?'web3':'web2';
@@ -365,6 +386,11 @@ programs.forEach(ensureType);
 function setAddType(t){
   addType=t;
   document.querySelectorAll('#typeSel .topt').forEach(x=>x.classList.toggle('active',x.dataset.type===t));
+}
+function setFilter(f){
+  filter=f;
+  document.querySelectorAll('#ftabs .ftab').forEach(x=>x.classList.toggle('active',x.dataset.filter===f));
+  render();
 }
 
 const TEMPLATE=(name,url)=>`Mulai assessment bug bounty terotorisasi di target ini.
@@ -652,6 +678,13 @@ function render(){
   const q=document.getElementById('search').value.toLowerCase();
   document.getElementById('cnt').textContent='('+programs.length+')';
 
+  // hitung per-tipe untuk badge di filter tabs
+  const nWeb2=programs.filter(p=>p.type==='web2').length;
+  const nWeb3=programs.filter(p=>p.type==='web3').length;
+  document.getElementById('fcAll').textContent=programs.length?('· '+programs.length):'';
+  document.getElementById('fcWeb2').textContent=nWeb2?('· '+nWeb2):'';
+  document.getElementById('fcWeb3').textContent=nWeb3?('· '+nWeb3):'';
+
   // auto-detek duplikat yang udah tersimpan
   const groups=findDupes();
   const dupKeys={};groups.forEach(g=>{const k=urlKey(g[0].url);dupKeys[k]=g.length;});
@@ -663,8 +696,16 @@ function render(){
       +'<a onclick="dedupeAll()">Bersihkan sekarang →</a>';
   }else{banner.style.display='none';banner.innerHTML='';}
 
-  const match=p=>p.name.toLowerCase().includes(q)||p.url.toLowerCase().includes(q);
-  const rowHTML=p=>{
+  const list=document.getElementById('list');
+  const filtered=programs.filter(p=>
+    (filter==='all'||p.type===filter)
+    &&(p.name.toLowerCase().includes(q)||p.url.toLowerCase().includes(q)));
+  if(!filtered.length){
+    const emptyMsg=programs.length
+      ?(filter!=='all'?('Belum ada program '+filter.toUpperCase()+'.'):'Gak ketemu.')
+      :'Belum ada program. Tambah di atas.';
+    list.innerHTML='<div class="empty">'+emptyMsg+'</div>';return;}
+  list.innerHTML=filtered.map(p=>{
     const isDup=dupKeys[urlKey(p.url)];
     const tf='<span class="typeflag '+p.type+'">'+p.type.toUpperCase()+'</span>';
     return `
@@ -676,21 +717,7 @@ function render(){
       <button class="btn danger" title="Web2/Web3" onclick="toggleType(${p.id},event)">⇄</button>
       <button class="btn danger" title="Ubah nama" onclick="editProg(${p.id},event)">✎</button>
       <button class="btn danger" title="Hapus" onclick="delProg(${p.id},event)">✕</button>
-    </div>`;
-  };
-
-  ['web2','web3'].forEach(t=>{
-    const all=programs.filter(p=>p.type===t);
-    const shown=all.filter(match);
-    document.getElementById(t==='web2'?'cntWeb2':'cntWeb3').textContent='('+all.length+')';
-    const el=document.getElementById(t==='web2'?'listWeb2':'listWeb3');
-    if(!shown.length){
-      const msg=all.length?'Gak ketemu.':('Belum ada program '+t.toUpperCase()+'.');
-      el.innerHTML='<div class="empty">'+msg+'</div>';
-    }else{
-      el.innerHTML=shown.map(rowHTML).join('');
-    }
-  });
+    </div>`;}).join('');
 }
 function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
 
