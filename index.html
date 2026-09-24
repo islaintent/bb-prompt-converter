@@ -184,14 +184,6 @@
     background:rgba(255,180,60,.12);border:1px solid rgba(255,180,60,.3);padding:0 4px;
     border-radius:3px;vertical-align:middle;letter-spacing:.5px;margin-left:6px}
 
-  /* type selector (web2/web3) */
-  .typesel{display:flex;gap:6px;margin-top:5px}
-  .topt{flex:1;text-align:center;padding:8px;font-size:12px;border-radius:var(--radius-sm);cursor:pointer;
-    background:var(--bg);color:var(--muted);font-weight:600;font-family:var(--mono);letter-spacing:.3px;
-    border:1px solid var(--border2);transition:.14s}
-  .topt:hover{color:var(--text);border-color:var(--muted)}
-  .topt.active[data-type="web2"]{background:rgba(99,179,255,.12);color:var(--blue);border-color:#2f6ea5}
-  .topt.active[data-type="web3"]{background:var(--accent-glow);color:var(--accent);border-color:var(--accent-dim)}
   /* filter tabs (web2/web3 toggle) */
   .ftabs{display:flex;gap:4px;margin-bottom:11px;background:var(--bg);padding:4px;
     border-radius:var(--radius-sm);border:1px solid var(--border)}
@@ -236,12 +228,6 @@
           <label>Link Program</label>
           <input type="text" id="pUrl" placeholder="https://security.avala.ai/bounty" oninput="previewName()">
           <div class="hint" id="namePreview"></div>
-          <label style="margin-top:11px">Tipe Program</label>
-          <div class="typesel" id="typeSel">
-            <div class="topt active" data-type="auto" onclick="setAddType('auto')">Auto</div>
-            <div class="topt" data-type="web2" onclick="setAddType('web2')">Web2</div>
-            <div class="topt" data-type="web3" onclick="setAddType('web3')">Web3</div>
-          </div>
           <div class="row" style="margin-top:12px">
             <button class="btn" onclick="addSingle()">+ Tambah</button>
           </div>
@@ -338,7 +324,6 @@ Thanks for your time!</pre>
 const KEY='bb_prompt_programs_v1';
 let programs=JSON.parse(localStorage.getItem(KEY)||'[]');
 let selected=null;
-let addType='auto';   // tipe yang dipilih di form "Add Satuan"
 let filter='all';     // filter list aktif: all | web2 | web3
 
 // ─── Klasifikasi Web2 vs Web3 ───────────────────────────────
@@ -383,10 +368,6 @@ function classifyType(url,name){
 function ensureType(p){if(p&&!p.type){p.type=classifyType(p.url,p.name);}return p;}
 programs.forEach(ensureType);
 
-function setAddType(t){
-  addType=t;
-  document.querySelectorAll('#typeSel .topt').forEach(x=>x.classList.toggle('active',x.dataset.type===t));
-}
 function setFilter(f){
   filter=f;
   document.querySelectorAll('#ftabs .ftab').forEach(x=>x.classList.toggle('active',x.dataset.filter===f));
@@ -602,10 +583,9 @@ function addSingle(){
     document.getElementById('pUrl').value='';document.getElementById('namePreview').textContent='';
     selectProg(dup.id);return;}
   const finalName=domainName(url);
-  const ftype=(addType==='auto')?classifyType(url,finalName):addType;
+  const ftype=classifyType(url,finalName);
   programs.unshift({id:Date.now()+Math.random(),name:finalName,url,type:ftype});
   save();document.getElementById('pUrl').value='';document.getElementById('namePreview').textContent='';
-  setAddType('auto');
   render();toast('Ditambah: '+finalName+' ['+ftype+']');
 }
 
