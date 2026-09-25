@@ -291,6 +291,34 @@ Thanks for your time!</pre>
         <button class="btn" onclick="copyDM()" style="flex:1">📋 Copy DM Template</button>
       </div>
     </div>
+
+    <div class="card" style="margin-top:14px">
+      <h2>Prompt Lanjutan <span class="count">(kirim setelah recon di-ACK, reusable)</span></h2>
+      <pre class="out" id="stage2Out" style="max-height:none;font-size:12px">Lanjut dari recon. Kerja otonom sampai selesai, jangan tanya per langkah. Batasnya scope program, bukan izin gue; kalau bentrok, aturan program menang.
+
+Buru: cari bug valid berdampak nyata, kejar High/Critical dulu, breadth-first lalu depth di kandidat paling berdampak. Rotasi kelas kalau buntu (pivot 3-fail/50req/15menit); gate/blokir bukan alasan berhenti. Kumpulkan kandidat kuat dulu baru angkat jadi finding.
+
+Buang sendiri: by-design, informational, public-by-design, root cause pihak ketiga, same-identity, out-of-scope, scanner tanpa jalur impact. Baca docs/test dulu sebelum menyebut bug.
+
+Naik jadi finding hanya kalau lengkap: input attacker + invariant dilanggar + jalur exploit + PoC JALAN yang membuktikan dampak. Rangkai temuan kecil jadi chain sebelum menyerah. Bug harus valid, confirmed, impact nyata.
+
+Validasi tanpa diminta: crosscheck teliti, audit dan validasi lagi, jalankan PoC beserta semuanya. Ulang dari state bersih, negative control, dua identitas untuk authorization, baca output PoC bukan exit code, turunkan ulang angka/root cause dari data live, cek dupe (issue/PR, advisory, changelog). Web3 wajib PoC jalan di fork/testnet. Buang false-positive: header sendiri, tanpa baseline, status tanpa ukuran byte, endpoint yang cuma mantulin input. Rapihkan yang salah/kurang; semuanya harus match (report, PoC, output).
+
+Proof berisiko: kalau buktiin dampak butuh nyentuh data nyata/dana/mainnet, jangan menghindar dan jangan cap severity sendiri. Susun rencana proof minimal (target, langkah, blast radius, reversibilitas), berhenti, minta konfirmasi gue dulu.
+
+Report: load skill format dulu, contek voice report kita yang pernah dibayar. Satu folder per temuan; isi dan nama file profesional sesuai skill/memory. Inggris profesional, paragraf, tanpa em-dash/hard-wrap. Impact sebatas yang dibuktikan PoC. Severity ikut definisi program, jangan karang.
+
+Email (kalau jalur email): buatkan draft yang bener, on-point, singkat tapi jelas dan rinci (apa bug-nya, di mana, kenapa penting, cara reproduksi). Tutup "Best regards, Fahrizal".
+
+Sebelum bilang siap: sepuluh cek berbeda, perbaiki yang ketahuan, tunjukkan semua file. Jangan kirim apa pun sebelum gue perintah.
+
+Setelah selesai: sebutkan persen keyakinan lo atas bug yang ditemukan, lalu sebutkan file wajib yang perlu gue attach.
+
+Kalau nihil: bilang apa adanya, sebut lane yang ditutup dan lead yang dibunuh, tulis status target ke memory.</pre>
+      <div class="row" style="margin-top:10px">
+        <button class="btn" onclick="copyStage2()" style="flex:1">📋 Copy Prompt Lanjutan</button>
+      </div>
+    </div>
   </div>
 
   <div class="toast" id="toast"></div>
@@ -720,6 +748,13 @@ function copyDM(){
   navigator.clipboard.writeText(txt).then(()=>toast('✓ DM template tersalin!'))
     .catch(()=>{const ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);
       ta.select();document.execCommand('copy');ta.remove();toast('✓ DM template tersalin!');});
+}
+
+function copyStage2(){
+  const txt=document.getElementById('stage2Out').textContent;
+  navigator.clipboard.writeText(txt).then(()=>toast('✓ Prompt lanjutan tersalin!'))
+    .catch(()=>{const ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);
+      ta.select();document.execCommand('copy');ta.remove();toast('✓ Prompt lanjutan tersalin!');});
 }
 
 function exportData(){
