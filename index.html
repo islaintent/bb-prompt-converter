@@ -128,6 +128,9 @@
     font-family:var(--mono)}
 
   .out-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:10px}
+  .card-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:13px}
+  .card-head h2{margin-bottom:0}
+  .card-head .btn{flex:0 0 auto;padding:7px 12px;font-size:12px}
   .out-head .who{font-size:14px;font-weight:650;min-width:0;overflow:hidden;text-overflow:ellipsis;
     white-space:nowrap}
   .out-head .who span{color:var(--muted);font-weight:400;font-size:11.5px;font-family:var(--mono)}
@@ -279,7 +282,10 @@ Ably, https://ably.com/security"></textarea>
     </div>
 
     <div class="card" style="margin-top:14px">
-      <h2>DM Template <span class="count">(reusable, semua project)</span></h2>
+      <div class="card-head">
+        <h2>DM Template <span class="count">(reusable, semua project)</span></h2>
+        <button class="btn" onclick="copyDM()">📋 Copy DM Template</button>
+      </div>
       <pre class="out" id="dmOut" style="max-height:none;font-size:12px">Hi, hope you're doing well.
 
 I'm a security researcher. I came across something I'd like to report, but I want to confirm your scope and rules before testing anything. Do you have a bug bounty program or a responsible disclosure policy I can follow?
@@ -287,37 +293,38 @@ I'm a security researcher. I came across something I'd like to report, but I wan
 Happy to work within whatever you have in place. No worries if not, just wanted to check first.
 
 Thanks for your time!</pre>
-      <div class="row" style="margin-top:10px">
-        <button class="btn" onclick="copyDM()" style="flex:1">📋 Copy DM Template</button>
-      </div>
     </div>
 
     <div class="card" style="margin-top:14px">
-      <h2>Prompt Lanjutan <span class="count">(kirim setelah recon di-ACK, reusable)</span></h2>
-      <pre class="out" id="stage2Out" style="max-height:none;font-size:12px">Lanjut dari recon. Kerja otonom sampai selesai, jangan tanya per langkah. Batasnya scope program, bukan izin gue; kalau bentrok, aturan program menang.
-
-Buru: cari bug valid berdampak nyata, kejar High/Critical dulu, breadth-first lalu depth di kandidat paling berdampak. Rotasi kelas kalau buntu (pivot 3-fail/50req/15menit); gate/blokir bukan alasan berhenti. Kumpulkan kandidat kuat dulu baru angkat jadi finding.
-
-Buang sendiri: by-design, informational, public-by-design, root cause pihak ketiga, same-identity, out-of-scope, scanner tanpa jalur impact. Baca docs/test dulu sebelum menyebut bug.
-
-Naik jadi finding hanya kalau lengkap: input attacker + invariant dilanggar + jalur exploit + PoC JALAN yang membuktikan dampak. Rangkai temuan kecil jadi chain sebelum menyerah. Bug harus valid, confirmed, impact nyata.
-
-Validasi tanpa diminta: crosscheck teliti, audit dan validasi lagi, jalankan PoC beserta semuanya. Ulang dari state bersih, negative control, dua identitas untuk authorization, baca output PoC bukan exit code, turunkan ulang angka/root cause dari data live, cek dupe (issue/PR, advisory, changelog). Web3 wajib PoC jalan di fork/testnet. Buang false-positive: header sendiri, tanpa baseline, status tanpa ukuran byte, endpoint yang cuma mantulin input. Rapihkan yang salah/kurang; semuanya harus match (report, PoC, output).
-
-Proof berisiko: kalau buktiin dampak butuh nyentuh data nyata/dana/mainnet, jangan menghindar dan jangan cap severity sendiri. Susun rencana proof minimal (target, langkah, blast radius, reversibilitas), berhenti, minta konfirmasi gue dulu.
-
-Report: load skill format dulu, contek voice report kita yang pernah dibayar. Satu folder per temuan; isi dan nama file profesional sesuai skill/memory. Inggris profesional, paragraf, tanpa em-dash/hard-wrap. Impact sebatas yang dibuktikan PoC. Severity ikut definisi program, jangan karang.
-
-Email (kalau jalur email): buatkan draft yang bener, on-point, singkat tapi jelas dan rinci (apa bug-nya, di mana, kenapa penting, cara reproduksi). Tutup "Best regards, Fahrizal".
-
-Sebelum bilang siap: sepuluh cek berbeda, perbaiki yang ketahuan, tunjukkan semua file. Jangan kirim apa pun sebelum gue perintah.
-
-Setelah selesai: sebutkan persen keyakinan lo atas bug yang ditemukan, lalu sebutkan file wajib yang perlu gue attach.
-
-Kalau nihil: bilang apa adanya, sebut lane yang ditutup dan lead yang dibunuh, tulis status target ke memory.</pre>
-      <div class="row" style="margin-top:10px">
-        <button class="btn" onclick="copyStage2()" style="flex:1">📋 Copy Prompt Lanjutan</button>
+      <div class="card-head">
+        <h2>Prompt Lanjutan <span class="count">(kirim setelah recon di-ACK, reusable)</span></h2>
+        <button class="btn" onclick="copyStage2()">📋 Copy Prompt Lanjutan</button>
       </div>
+      <pre class="out" id="stage2Out" style="max-height:none;font-size:12px">Lanjut dari recon. Otonom sampai selesai, jangan tanya per langkah. Batasnya scope program, bukan izin gue; kalau bentrok, aturan program menang.
+
+1. SKILL, urut pakai.
+bb-autonomous-coverage dan audit-coverage-ledger jalan sepanjang hunt, dimuat ulang di setiap rotasi kelas. Tiap kandidat: bug-bounty-design-intent-kill-gate, lalu bug-bounty-validation-discipline, lalu oracle-verified-finding-gate. Web3: web3-invariant-first-audit, web3-audit, smart-contract-vulnerabilities, web3-grep-arsenal, dan web3-poc-exploit-templates saat butuh PoC. Menulis: bug-bounty-report-format dulu, baru bug-bounty-report, humanizer selama menulis. Sebelum keluar: bb-stage7-submission-gate.
+
+2. HUNT.
+Cari bug valid dengan dampak nyata, High/Critical dulu. Breadth-first untuk memetakan, lalu depth di kandidat paling berdampak. Catat unit coverage dan verdict-nya sambil jalan. Rotasi kelas kalau buntu (pivot di 3 kegagalan, 50 request, atau 15 menit); gate atau blokir itu detour, bukan alasan berhenti. Kumpulkan kandidat kuat dulu baru angkat jadi finding.
+Naik jadi finding hanya kalau lengkap: input yang dikontrol attacker, invariant yang dilanggar, jalur exploit, dan PoC jalan yang membuktikan dampak. Rangkai temuan kecil jadi chain sebelum menyerah.
+Buang sendiri: by-design, informational, public-by-design, root cause pihak ketiga, same-identity, out-of-scope, output scanner tanpa jalur impact. Baca dokumentasi dan test mereka sebelum menyebut sesuatu bug.
+
+3. VALIDASI, tanpa diminta.
+Crosscheck yang teliti: audit lagi, validasi lagi, jalankan PoC-nya sampai selesai. Ulang dari state bersih, jalankan control yang seharusnya menyangkal temuan dan pastikan control itu gagal di target yang aman, dua identitas untuk authorization, baca output PoC bukan exit code, turunkan ulang angka dan root cause dari data live, cek dupe ke issue, PR, advisory, dan changelog. Web3 wajib PoC jalan di fork atau testnet dengan block dipin. Output shell yang lewat filter rtk bukan bukti.
+Buang false-positive: header sendiri, tanpa baseline, status tanpa ukuran byte, endpoint yang cuma memantulkan input. Rapikan yang salah atau kurang, dan semuanya harus match: report, PoC, dan output yang dikutip.
+
+4. PROOF BERISIKO, gate manual.
+Kalau butuh menyentuh data nyata, dana, atau mainnet: jangan menghindar dan jangan mengecilkan severity. Susun rencana proof minimal (target, langkah, blast radius, reversibilitas), berhenti, minta konfirmasi gue dulu.
+
+5. REPORT.
+Satu folder per temuan, dinamai bugnya, nama file biasa. Contek voice report kita yang pernah dibayar. Inggris profesional bentuk paragraf, tanpa em-dash dan hard-wrap. Impact sebatas yang dibuktikan PoC. Severity ikut definisi program, jangan karang, jangan pasang CVSS sendiri. Trim dan grep tag internal ulang setiap habis edit.
+
+6. EMAIL DAN DELIVERABILITY.
+Kalau jalurnya email, buat draft yang on-point: apa bugnya, di mana, kenapa penting, cara reproduksi. Singkat tapi rinci. Tutup "Best regards, Fahrizal". Cek deliverability dulu (MX, probe SMTP tanpa DATA, pantau bounce di himalaya kalau inkonklusif) dan catat verdict-nya.
+
+7. TUTUP.
+Sebelum bilang siap: sepuluh cek berbeda, perbaiki yang ketahuan, tunjukkan semua file. Jangan kirim apa pun sebelum gue perintah. Selesai berarti sebut persen keyakinan lo atas tiap bug dan daftar file yang wajib gue attach. Kalau nihil, bilang apa adanya, sebut lane yang ditutup dan lead yang dibunuh beserta alasannya, lalu tulis status target ke memory.</pre>
     </div>
   </div>
 
@@ -402,30 +409,49 @@ function setFilter(f){
   render();
 }
 
-const TEMPLATE=(name,url)=>`Assessment bug bounty terotorisasi. Target payout maksimal: temuan High/Critical yang confirmed dan ter-exploitasi, bukan hipotesis.
+const TEMPLATE=(name,url)=>`Assessment bug bounty terotorisasi. Yang dibayar cuma temuan High/Critical yang confirmed dan ter-exploitasi, bukan hipotesis.
 
 Program: ${name}
 Scope & rules: ${url}
 
-1. SKILL: load bb-rules-of-engagement, bb-autonomous-coverage, bug-bounty-validation-discipline, bug-bounty-design-intent-kill-gate, oracle-verified-finding-gate, bb-stage7-submission-gate. Web3/smart-contract: tambah web3-audit + smart-contract-vulnerabilities. Report: bug-bounty-report-format lalu bug-bounty-report. Cek memory untuk konteks target.
+1. SKILL, urut pakai.
+Sebelum scope dibaca: bb-rules-of-engagement.
+Pre-hunt dan di setiap rotasi kelas: bb-autonomous-coverage, lalu recon-and-methodology kalau surface-nya baru, dan audit-coverage-ledger jalan berdampingan sepanjang assessment.
+Tiap kandidat, urutannya mengikat: bug-bounty-design-intent-kill-gate, lalu bug-bounty-validation-discipline, lalu oracle-verified-finding-gate untuk yang lolos keduanya.
+Kalau ada web3 di scope: web3-invariant-first-audit (Phase A dulu, sebelum cari bug), web3-audit, smart-contract-vulnerabilities, lalu web3-grep-arsenal sesudah pre-dive kill signal lolos, dan web3-poc-exploit-templates baru saat kandidat butuh PoC.
+Saat menulis: bug-bounty-report-format dulu, baru bug-bounty-report, dengan humanizer dipakai selama menulis bukan sesudahnya.
+Sebelum apa pun keluar: bb-stage7-submission-gate plus pre-send validation ritual.
+Cek memory untuk konteks target sebelum mulai.
 
-2. RECON & SCOPE: baca sendiri link di atas + semua section tertaut. Ekstrak: in-scope aset, out-of-scope, rules/rate-limit/larangan scanner/aturan akun uji, severity+reward tiers, eligibility, kontak/jalur lapor. Aturan program menang atas segalanya. Scope tidak jelas atau halaman mati = berhenti dan lapor, jangan menebak.
+2. SCOPE.
+Baca sendiri halaman scope di atas plus semua section tertaut, jangan ringkasan orang lain. Ekstrak dan simpan di targets/<program>/: aset in-scope, out-of-scope, rate limit, larangan scanner, aturan akun uji, tier severity dan reward, eligibility, jalur lapor. Halaman mati atau scope ambigu berarti berhenti dan lapor, bukan menebak, dan tidak ada satu request pun ke target sebelum scope terbaca. Produksi dan mainnet passive-only kecuali program mengizinkan sebaliknya; eksploitasi jalan di testnet, fork, atau build lokal.
 
-3. PENDALAMAN PROJEK (sebelum nyerang): pahami sistemnya dulu, jangan asal fuzz. Di mana dana/data sensitif mengalir, siapa aktornya (role/tenant/privilege), di mana trust boundary. Web2: endpoint/API, auth & session, object/tenant ownership, aksi state-changing (bayar/transfer/withdraw/ubah role), upload, integrasi. Web3: alur dana, fungsi privileged, invariant akuntansi, oracle/price, external call, proxy/storage, signature/replay, commit terbaru + audit lama. Susun target bernilai tinggi + hipotesis serangan konkret. Prioritas: surface yang paling mungkin High/Critical, bukan yang paling gampang.
+3. PENDALAMAN, sebelum menyerang.
+Pahami sistemnya dulu, jangan asal fuzz. Ke mana dana dan data sensitif mengalir, siapa aktornya (role, tenant, privilege), di mana trust boundary-nya. Web2: endpoint dan API, auth dan session, ownership object dan tenant, aksi state-changing (bayar, transfer, withdraw, ubah role), upload, integrasi pihak ketiga. Web3: tulis dulu model intent per kontrak (role, aktor, invariant, dependency) tanpa cari bug, baru alur dana, fungsi privileged, invariant akuntansi, oracle, external call, proxy dan storage, signature dan replay, commit terbaru, dan temuan audit lama yang statusnya acknowledged atau risk-accepted. Keluarkan daftar target bernilai tinggi plus hipotesis serangan yang konkret. Prioritas ke surface yang paling mungkin High/Critical, bukan yang paling gampang disentuh.
 
-4. BURU & BUKTIKAN: otonom, breadth-first lalu depth di kandidat paling berdampak. Rotasi kelas kalau buntu (pivot 3-fail/50req/15menit); gate/blokir bukan alasan berhenti. Kumpulkan kandidat kuat dulu. Naik jadi FINDING hanya kalau: input attacker + invariant dilanggar + jalur exploit + PoC JALAN yang membuktikan dampak. Kejar dampak nyata (ATO, IDOR/BAC lintas tenant, privesc admin, RCE, SSRF+metadata, SQLi exfil, auth bypass; web3: curi/bekukan dana, break invariant, manipulasi oracle, reentrancy loss nyata) dan rangkai temuan kecil jadi chain sebelum menyerah. Buang sendiri: by-design, informational, public-by-design, root cause pihak ketiga, same-identity, out-of-scope, scanner tanpa jalur impact. Baca docs/test dulu sebelum menyebut bug.
+4. GATE, satu-satunya tempat berhenti.
+Berhenti di sini, sesudah recon dan pendalaman, untuk konfirmasi scope dan arah serangan. Sesudah gue ACK, otonom sampai selesai untuk semua proof non-destruktif; jangan tanya per langkah, batasnya scope program bukan izin gue. Prioritas High/Critical, turun ke Medium hanya setelah lane high-risk benar-benar habis, Low dan Info diabaikan kecuali bisa dirangkai ke atas. Jangan naikkan severity tanpa bukti.
 
-5. VALIDASI (tanpa diminta): ulang dari state bersih beberapa kali, jalankan negative control, dua identitas untuk authorization, baca output PoC bukan exit code. Web3 wajib PoC jalan di fork/testnet (Foundry/anvil), bukan pembacaan source. Buang false-positive (header sendiri, status tanpa baseline byte, endpoint yang cuma mantulin input). Cek dupe: issue/PR, advisory, changelog, writeup, hall of fame.
+5. HUNT.
+Breadth-first dulu untuk memetakan, lalu depth di kandidat paling berdampak. Catat setiap unit coverage dengan verdict-nya sambil jalan, karena itu satu-satunya dasar yang sah untuk bilang sebuah surface sudah habis. Rotasi kelas kalau buntu (pivot di 3 kegagalan, 50 request, atau 15 menit); gate, blokir, dan captcha itu detour, bukan alasan berhenti. Kumpulkan kandidat kuat dulu, jangan buru-buru mengangkat yang pertama kelihatan.
+Naik jadi FINDING hanya kalau empat-empatnya ada: input yang dikontrol attacker, invariant yang dilanggar, jalur exploit yang jalan, dan PoC yang membuktikan dampaknya. Kejar dampak nyata: ATO, IDOR atau BAC lintas tenant, privesc ke admin, RCE, SSRF yang sampai metadata, SQLi dengan exfil, auth bypass; web3: dana bisa dicuri atau dibekukan, invariant pecah, oracle bisa digerakkan, reentrancy dengan kerugian nyata. Rangkai temuan kecil jadi chain sebelum menyerah.
+Buang sendiri tanpa gue suruh: by-design, informational, public-by-design, root cause di pihak ketiga, same-identity, out-of-scope, output scanner tanpa jalur impact. Baca dokumentasi dan test suite mereka sebelum menyebut sesuatu bug, karena test mereka sendiri sering menyatakan intent-nya.
 
-6. PROOF BERISIKO (gate manual): kalau buktiin dampak butuh nyentuh data nyata/dana/mainnet, jangan menghindar dan jangan cap severity sendiri. Susun rencana proof minimal (target, langkah, blast radius, reversibilitas), berhenti, minta konfirmasi gue. Baru eksekusi seminimal mungkin. Jangan pernah broadcast tx mainnet, pindah dana, atau sentuh data user pihak ketiga tanpa izin gue per-tindakan.
+6. VALIDASI, tanpa diminta.
+Ulang dari state bersih beberapa kali, jalankan control yang seharusnya menyangkal temuan dan pastikan control itu gagal di target yang aman, dua identitas terpisah untuk apa pun yang menyangkut authorization, baca output PoC bukan exit code, turunkan ulang setiap angka dan root cause dari data live. Web3 wajib PoC jalan di fork atau testnet dengan block yang dipin, bukan pembacaan source. Output shell yang lewat filter rtk bukan bukti; ambil baris yang menentukan lewat rtk proxy sebelum mengutipnya.
+Buang false-positive: header yang gue tambahkan sendiri, status code tanpa baseline byte, endpoint yang cuma memantulkan input. Cek dupe sebelum mulai menulis, bukan sesudah: issue dan PR terbuka, advisory, changelog, writeup, hall of fame.
 
-ALUR: berhenti SEKALI setelah recon+pendalaman untuk konfirmasi scope + arah serangan. Setelah gue ACK, otonom sampai selesai untuk semua proof non-destruktif; jangan tanya per langkah, batasnya scope bukan izin gue. Prioritas High/Critical, turun ke Medium kalau nihil, abaikan Low/Info kecuali bisa dirangkai. Jangan naikkan severity tanpa bukti.
+7. PROOF BERISIKO, gate manual.
+Kalau membuktikan dampak butuh menyentuh data nyata, dana, atau mainnet, jangan menghindar dan jangan mengecilkan severity supaya aman. Susun rencana proof paling minimal (target, langkah, blast radius, reversibilitas), berhenti, minta konfirmasi gue, baru eksekusi seminimal mungkin. Jangan pernah broadcast transaksi mainnet, memindahkan dana, atau menyentuh data user pihak ketiga tanpa izin gue per tindakan.
 
-REPORT: contek voice report kita yang pernah dibayar. Satu folder per temuan. English profesional, paragraf, tanpa em-dash/hard-wrap. Impact sebatas yang dibuktikan PoC, severity ikut definisi program. Email vendor singkat tapi rinci (bug apa, di mana, kenapa penting, cara reproduksi), tutup "Best regards, Fahrizal". Sebelum siap: sepuluh cek, perbaiki, tunjukkan semua file.
+8. REPORT.
+Contek voice dari report kita yang pernah dibayar, buka file-nya dulu sebelum menulis. Satu folder per temuan, dinamai bugnya, nama file di dalamnya biasa saja tanpa prefix F1/F2. Inggris profesional bentuk paragraf, tanpa em-dash dan tanpa hard-wrap. Impact sebatas yang dibuktikan PoC. Severity ikut definisi program, jangan dikarang dan jangan pasang CVSS sendiri; kalau formulir mereka memaksa satu field, pilih tier yang cocok dengan definisi impact mereka dan pastikan isi report mengatakan hal yang sama. Setiap habis edit, jalankan lagi trim panjang plus grep tag internal supaya tidak ada [PROVEN] atau [POTENTIAL] bocor ke prosa vendor.
 
-DELIVERABILITY (jalur email): resolve MX, probe SMTP non-destruktif (HELO/MAIL FROM/RCPT TO, TANPA DATA), kalau inkonklusif kirim probe minimal lalu pantau inbox gue via himalaya untuk bounce. BOUNCE/tidak dikenal = jangan anggap siap, cari kontak alternatif (security.txt, halaman program, DM). Catat verdict di README.
+9. EMAIL DAN DELIVERABILITY.
+Email vendor singkat tapi rinci: apa bugnya, di mana, kenapa penting, cara reproduksi. Tutup "Best regards, Fahrizal". Kalau jalurnya email: resolve MX, probe SMTP non-destruktif (HELO, MAIL FROM, RCPT TO, TANPA DATA). Kalau inkonklusif, kirim satu probe minimal lalu pantau inbox gue lewat himalaya untuk bounce. Bounce atau alamat tidak dikenal berarti belum siap kirim: cari kontak alternatif (security.txt, halaman program, DM). Catat verdict-nya di README temuan.
 
-KELUAR: temuan siap + alamat valid = jalankan pre-send ritual + semua gate, kirim file report ke gue. JANGAN submit ke vendor tanpa perintah. Nihil temuan = bilang apa adanya, sebut lane tertutup + lead yang dibunuh, tulis status ke memory.`;
+10. KELUAR.
+Sebelum bilang siap: sepuluh cek berbeda, perbaiki yang ketahuan, tunjukkan semua file. Temuan siap dan alamat valid berarti jalankan pre-send ritual dan semua gate, lalu serahkan file report ke gue. Jangan submit ke vendor tanpa perintah gue. Tutup dengan persen keyakinan lo atas tiap temuan dan daftar file yang wajib gue attach. Kalau nihil, bilang apa adanya, sebut lane yang ditutup dan lead yang dibunuh beserta alasannya, lalu tulis status target ke memory.`;
 
 const SKEY='bb_sync_cfg_v1';
 // Gist default (private, islaintent) — udah di-prep oleh Vexa
